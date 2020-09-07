@@ -9,3 +9,15 @@ cdk.out
 
 # Parcel default cache directory
 .parcel-cache
+
+# Add JavaScript files used in Lambda functions
+!lambdas/**/*.js
+
+# IntelliJ
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# OS X
+.DS_Store

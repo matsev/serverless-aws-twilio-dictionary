@@ -4,4 +4,4 @@ import * as cdk from '@aws-cdk/core';
 import { ServerlessDictionaryStack } from '../lib/serverless-dictionary-stack';
 
 const app = new cdk.App();
-new ServerlessDictionaryStack(app, 'ServerlessDictionaryStack');
+new ServerlessDictionaryStack(app, 'ServerlessDictionaryStack', { description: 'Serverless Dictionary' });

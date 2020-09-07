@@ -1,13 +1,13 @@
-import { expect as expectCDK, matchTemplate, MatchStyle } from '@aws-cdk/assert';
+import { expect as expectCDK, haveResource } from '@aws-cdk/assert';
 import * as cdk from '@aws-cdk/core';
 import * as ServerlessDictionary from '../lib/serverless-dictionary-stack';
 
-test('Empty Stack', () => {
+test('Verify Stack', () => {
     const app = new cdk.App();
-    // WHEN
+
     const stack = new ServerlessDictionary.ServerlessDictionaryStack(app, 'MyTestStack');
-    // THEN
-    expectCDK(stack).to(matchTemplate({
-      "Resources": {}
-    }, MatchStyle.EXACT))
+
+    expectCDK(stack).to(haveResource('AWS::ApiGatewayV2::Api'));
+    expectCDK(stack).to(haveResource('AWS::Lambda::Function'));
+    expectCDK(stack).to(haveResource('AWS::DynamoDB::Table'));
 });
