@@ -1,6 +1,6 @@
-# Serverless Twilio Dictionary
+# Serverless AWS Twilio Dictionary
 
-This project is a serverless dictionary hosted on AWS used as a backend to demonstrate the interaction with a Twilio account, hereby enabling communication with the dictionary via SMS.
+This project is a serverless dictionary hosted on AWS. It is used to demonstrate the interaction with a Twilio account, hereby enabling communication with the dictionary using SMS.
 
 
 ## Usage
