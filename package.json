@@ -1,6 +1,19 @@
 {
-  "name": "serverless-dictionary",
-  "version": "0.1.0",
+  "name": "serverless-aws-twilio-dictionary",
+  "description": "A serverless dictionary hosted on AWS with Twilio account integration used for SMS communication",
+  "version": "0.0.1",
+  "keywords": [
+    "aws",
+    "cdk",
+    "serverless",
+    "twilio"
+  ],
+  "author": "Mattias Severson",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matsev/serverless-aws-twilio-dictionary"
+  },
   "bin": {
     "serverless-dictionary": "bin/serverless-dictionary.js"
   },
