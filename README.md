@@ -7,9 +7,9 @@ A serverless dictionary hosted on AWS with Twilio account integration that enabl
 
 After installation, you can interact with the dictionary using the following syntax:
 
-> [command] word [meaning]
+> [command] word [definition]
 
-There are four commands (see list below). If omitted, the command defaults to `read`. The `word` is the dictionary key and one must be provided with all dictionary interactions. The `meaning` part is used when creating or updating the meaning of different worts. 
+There are four commands (see list below). If omitted, the command defaults to `read`. The `word` is the dictionary key and one must be provided with all dictionary interactions. The `definition` part is used when creating or updating the meaning of different words. 
 
 | Command   | Abbreviation  | Comment                                           |
 | --------- | ------------- | ------------------------------------------------- |
@@ -36,7 +36,7 @@ reads the value of the `TLA` entry
  
 ## Architecture
 
-![](architecture.svg)
+![architecture.svg](architecture.svg)
 
 The phone sends an SMS message to the Twilio platform which in turn performs a HTTP request to the serverless dictionary in the AWS cloud. The HTTP response from the serverless dictionary is then translated back to text by the Twilio platform before it sends it back to the phone as another SMS message. Consequently, the Twilio platform is responsible for phone the phone interaction and the AWS part is responsible for the providing HTTP communication, application logic and storage. Consequently, the AWS parrts consists of a HTTP API that forwards the request to a Lambda function, which in turns communicate with a DynamoDB table.
 

@@ -2,28 +2,28 @@ const AWS = require('aws-sdk');
 const querystring = require('querystring');
 const documentClient = new AWS.DynamoDB.DocumentClient({ apiVersion: '2012-08-10' });
 
-const { DICTIONARY_TABLE_NAME, WORD } = process.env;
-const MEANING = 'meaning';
+const { DICTIONARY_TABLE_NAME, PARTITION_KEY } = process.env;
+const DEFINITION = 'definition';
 const TWILIO = 'twilio';
 
 
-const create = async (word, meaning) => {
-    console.info(`create: '${word}' => '${meaning}'`);
+const create = async (word, definition) => {
+    console.info(`create: '${word}' => '${definition}'`);
     const params = {
         TableName: DICTIONARY_TABLE_NAME,
         Item: {
-            [WORD]: word,
-            [MEANING]: meaning,
+            [PARTITION_KEY]: word,
+            definition,
         },
-        ConditionExpression: `attribute_not_exists(${WORD})`,
+        ConditionExpression: `attribute_not_exists(${PARTITION_KEY})`,
     };
     return documentClient.put(params).promise()
         .then(data => {
             console.info('created:', JSON.stringify(data));
             return {
                 word,
-                meaning,
-                msg: `Created: ${word} - ${meaning}`,
+                definition,
+                msg: `Created: ${word} - ${definition}`,
             };
         })
         .catch(err => {
@@ -44,7 +44,7 @@ const read = async (word) => {
     const params = {
         TableName: DICTIONARY_TABLE_NAME,
         Key: {
-            [WORD]: word,
+            [PARTITION_KEY]: word,
         },
     };
     return documentClient.get(params).promise()
@@ -53,9 +53,9 @@ const read = async (word) => {
             const { Item } = data;
             return Item
                 ? {
-                    word: Item[WORD],
-                    meaning: Item[MEANING],
-                    msg: `Read: ${Item[WORD]} - ${Item[MEANING]}`,
+                    word: Item[PARTITION_KEY],
+                    definition: Item[DEFINITION],
+                    msg: `Read: ${Item[PARTITION_KEY]} - ${Item[DEFINITION]}`,
                 }
                 : {
                     word,
@@ -65,20 +65,20 @@ const read = async (word) => {
 };
 
 
-const update = async (word, meaning) => {
-    console.info(`update: '${word}' => '${meaning}'`);
+const update = async (word, definition) => {
+    console.info(`update: '${word}' => '${definition}'`);
     const params = {
         TableName: DICTIONARY_TABLE_NAME,
         Key: {
-          [WORD]: word,
+          [PARTITION_KEY]: word,
         },
-        UpdateExpression: `set #meaning = :meaning`,
-        ConditionExpression: `attribute_exists(${WORD})`,
+        UpdateExpression: 'set #definition = :definition',
+        ConditionExpression: `attribute_exists(${PARTITION_KEY})`,
         ExpressionAttributeNames: {
-            '#meaning': MEANING,
+            '#definition': DEFINITION,
         },
         ExpressionAttributeValues: {
-            ':meaning': meaning,
+            ':definition': definition,
         },
     };
     return documentClient.update(params).promise()
@@ -86,8 +86,8 @@ const update = async (word, meaning) => {
             console.info('updated:', JSON.stringify(data));
             return {
                 word,
-                meaning,
-                msg: `Updated: ${word} - ${meaning}`,
+                definition,
+                msg: `Updated: ${word} - ${definition}`,
             };
         })
         .catch(err => {
@@ -108,7 +108,7 @@ const del = async (word) => {
     const params = {
         TableName: DICTIONARY_TABLE_NAME,
         Key: {
-            [WORD]: word,
+            [PARTITION_KEY]: word,
         },
     };
     return documentClient.delete(params).promise()
@@ -122,55 +122,25 @@ const del = async (word) => {
 };
 
 
-const parseMsg = (base64Str) => {
+const COMMAND_TABLE = {
+  C       : create,
+  CREATE  : create,
+  R       : read,
+  READ    : read,
+  U       : update,
+  UPDATE  : update,
+  D       : del,
+  DELETE  : del,
+};
+
+
+const extractBody = (base64Str) => {
     const input = Buffer.from(base64Str, 'base64').toString('utf8');
     console.info(`decoded: '${input}'`);
+
     const { Body } = querystring.parse(input);
     console.info(`Body: '${Body}'`);
-
-    const body = Body.split(' ');
-
-    const command = body[0].toLowerCase();
-    let func;
-    let word = body[1];
-    let meaning;
-
-    switch (command) {
-        case 'c':
-        case 'create':
-            func = create;
-            meaning = body.slice(2).join(' ');
-            break;
-
-        case 'd':
-        case 'delete':
-            func = del;
-            break;
-
-
-        case 'u':
-        case 'update':
-            func = update;
-            meaning = body.slice(2).join(' ');
-            break;
-
-        case 'r':
-        case 'read':
-            func = read;
-            break;
-
-        default:
-            // default to "read" if no command is specified
-            func = read;
-            word = body[0];
-            break;
-    }
-
-    return {
-        func,
-        word,
-        meaning,
-    };
+    return Body;
 };
 
 
@@ -191,22 +161,25 @@ const createTwiML = (msg) => {
 };
 
 
-exports.handler = async function(event, context) {
+exports.handler = async (event, context) => {
     console.info('Received event:', JSON.stringify(event));
     const { body, headers: { 'user-agent' : userAgent } } = event;
+    const msgBody = extractBody(body);
 
+    const [ command, word, ...definition ] = msgBody.split(' ');
+    const func = COMMAND_TABLE[command.toUpperCase()];
 
-    const { func, word, [MEANING]: receivedMeaning } = parseMsg(body);
-    const result = await func(word, receivedMeaning);
+    const result = func
+        ? await func(word, definition.join(' '))
+        // default to 'read' if there is no matching command. In that case, the 'key' is passed as the 'command'
+        : await read(command);
 
     console.info('result:', JSON.stringify(result));
 
-    const { msg, meaning } = result;
     return userAgent.toLowerCase().includes(TWILIO)
-        ? createTwiML(msg)
+        ? createTwiML(result.msg)
         : {
             word,
-            meaning,
-            msg,
+            ...result,
         };
 };

@@ -5,7 +5,7 @@ import * as apigatewayv2 from '@aws-cdk/aws-apigatewayv2'
 import * as logs from "@aws-cdk/aws-logs";
 
 
-const WORD = 'word';
+const PARTITION_KEY = 'word';
 
 
 export class ServerlessDictionaryStack extends cdk.Stack {
@@ -16,7 +16,7 @@ export class ServerlessDictionaryStack extends cdk.Stack {
     // DynamoDB table for persistence
     const dictionaryTable = new dynamodb.Table(this, 'DictionaryTable', {
       partitionKey: {
-        name: WORD,
+        name: PARTITION_KEY,
         type: dynamodb.AttributeType.STRING,
       },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -32,7 +32,7 @@ export class ServerlessDictionaryStack extends cdk.Stack {
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
         DICTIONARY_TABLE_NAME: dictionaryTable.tableName,
-        WORD: WORD,
+        PARTITION_KEY: PARTITION_KEY,
       }
     });
     dictionaryTable.grantReadWriteData(dictionaryLambda);
